@@ -1,17 +1,18 @@
 import {Router} from "express";
-import {register, login } from "./auth.controller.js";
+import {register, login} from "./auth.controller.js";
 
 const router = Router();
 
-router.post('/register' , register);
-router.post('/login' , login);
+router.post('/register', register);
+router.post('/login', login);
 
 /**
  * @openapi
  * tags:
  *   - name: Auth
- *     description: Authentication endpoints
+ *     description: Авторизация
  */
+
 
 /**
  * @openapi
@@ -21,6 +22,7 @@ router.post('/login' , login);
  *     summary: Register a new user
  *     requestBody:
  *       required: true
+ *       description: User Registration Data (object)
  *       content:
  *         application/json:
  *           schema:
@@ -29,46 +31,56 @@ router.post('/login' , login);
  *             properties:
  *               email:
  *                 type: string
- *                 example: "a@a.com"
+ *                 example: "string@example.com"
  *               password:
  *                 type: string
- *                 example: "123456"
+ *                 example: "string"
  *               name:
  *                 type: string
- *                 example: "Dori"
+ *                 example: "string"
  *     responses:
  *       201:
  *         description: Created
- *       409:
- *         description: Email already exists
+ *       400:
+ *         description: Bad request
  */
 
 /**
  * @openapi
  * /api/auth/login:
  *   post:
- *     tags: [Auth]
+ *     tags:
+ *       - Auth
  *     summary: Login and get JWT token
+ *     description: Возвращает JWT токен при успешной авторизации
+ *     operationId: login
+ *
  *     requestBody:
+ *       description: User login Data (object)
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [email, password]
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
- *                 example: "a@a.com"
+ *                 description: Email пользователя
+ *                 example: "string@example.com"
  *               password:
  *                 type: string
- *                 example: "123456"
+ *                 description: Пароль пользователя
+ *                 example: "string"
  *     responses:
  *       200:
- *         description: OK
- *       401:
- *         description: Invalid credentials
+ *         description: Success
+ *       400:
+ *         description: Bad request
  */
+
 
 
 export default router;

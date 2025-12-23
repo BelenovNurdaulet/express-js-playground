@@ -17,20 +17,20 @@ export async function register(req, res) {
         return res.status(400).send({error: 'Заполните все необходимые поля'});
     }
 
-    const emailExists = prisma.user.findUnique({where: {email}});
+    const emailExists = await prisma.user.findUnique({where: {email}});
 
-    if (!emailExists) {
+    if (emailExists) {
         return res.status(409).send({error: `Пользователь с почтой "${email}" , уже существует`})
     }
-    const hashPassword = await bcrypt.hashSync(password, 10);
+    const hashPassword = await bcrypt.hash(password, 10);
 
-    const userCreate = await prisma.user.create({
+    const user = await prisma.user.create({
         data: {email: email, name: name ?? null, password: hashPassword},
         select: {id: true, email: true, name: true, createdAt: true}
     })
 
-    const token = signToken(userCreate.id);
-    return res.status(201).json({userCreate, token});
+    const token = signToken(user.id);
+    return res.status(201).json({user, token});
 
 }
 
@@ -43,17 +43,16 @@ export async function login(req, res) {
 
     const user = await prisma.user.findUnique({where: {email}});
     if (!user) {
-        return res.status(401).send({error: 'Пользователь не найден'});
+        return res.status(401).send({error: 'Неверные данные авторизации'});
     }
 
     const passwordRight = await bcrypt.compare(password, user.password);
-
     if (!passwordRight) {
-        return res.status(401).send({error: 'Неверный пароль'});
+        return res.status(401).send({error: 'Неверные данные авторизации'});
     }
 
     const token = signToken(user.id);
-    return res.status(201).json({
+    return res.status(200).json({
         user: {id: user.id, name: user.name, email: user.email},
         token,
     });

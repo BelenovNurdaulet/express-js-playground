@@ -1,8 +1,11 @@
 import jwt from "jsonwebtoken";
+import {UnauthorizedError} from "../../errors/CustomError.js";
 
 export function auth(req, res, next) {
     const header = req.headers.authorization;
-    if (!header || !header.startsWith('Bearer ')) return res.status(401).json({error: 'Unauthorized'});
+    if (!header || !header.startsWith('Bearer ')) {
+         throw new UnauthorizedError("Unauthorized");
+    }
 
     const token = header.split(' ')[1];
     try {
@@ -10,7 +13,6 @@ export function auth(req, res, next) {
         req.user = {id: payload.sub};
         return next()
     } catch (e) {
-        return res.status(401).json({ error: "Unauthorized" });
+       throw new UnauthorizedError("Unauthorized");
     }
-
 }

@@ -1,10 +1,11 @@
 import {Router} from "express";
 import {register, login} from "./auth.controller.js";
+import {asyncHandler} from "../../shared/asyncHandler.js";
 
 const router = Router();
 
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', asyncHandler(register));
+router.post('/login', asyncHandler(login));
 
 /**
  * @openapi
@@ -12,7 +13,6 @@ router.post('/login', login);
  *   - name: Auth
  *     description: Авторизация
  */
-
 
 /**
  * @openapi

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { me, updatePassword, updateProfile } from "./profile.controller.js";
 import {auth} from "../auth/auth.middleware.js";
+import {asyncHandler} from "../../shared/asyncHandler.js";
 
 const router = Router();
 
@@ -100,12 +101,12 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/me", auth, me);
+router.get("/me", auth, asyncHandler(me));
 
 /**
  * @swagger
  * /api/profile/updatePassword:
- *   patch:
+ *   put:
  *     tags: [Profile]
  *     summary: Обновить пароль текущего пользователя
  *     security:
@@ -147,7 +148,7 @@ router.get("/me", auth, me);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.patch("/updatePassword", auth , updatePassword);
+router.put("/updatePassword", auth , asyncHandler(updatePassword));
 
 /**
  * @swagger
@@ -205,6 +206,6 @@ router.patch("/updatePassword", auth , updatePassword);
  *             example:
  *               message: "Почта \"new@mail.com\" уже занята"
  */
-router.patch("/updateProfile", auth, updateProfile);
+router.patch("/updateProfile", auth, asyncHandler(updateProfile));
 
 export default router;

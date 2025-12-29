@@ -1,11 +1,12 @@
 import express from "express";
+import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
-import "dotenv/config";
 import profileRoutes from "./modules/profile/profile.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import requestId from "./middlewares/requestId.js";
 import exceptionHandler from "./middlewares/exceptionHandler.js";
+import cors from "cors";
 
 if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not set");
@@ -14,8 +15,8 @@ if (!process.env.JWT_SECRET) {
 const PORT = 5001;
 
 const app = express();
+app.use(cors())
 app.use(express.json());
-
 app.use(requestId);
 /** @type {import('swagger-jsdoc').Options} */
 const swaggerOptions = {
@@ -32,14 +33,11 @@ const swaggerOptions = {
         "./src/modules/**/*.js",
     ],
 };
-
 const swaggerDocs = swaggerJSDoc(swaggerOptions);
+app.use("/swagger", swaggerUi.serve , swaggerUi.setup(swaggerDocs))
 
-app.use("/api-docs", swaggerUi.serve , swaggerUi.setup(swaggerDocs))
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
-
-
 app.get("/", (req, res) => {
     res.status(200).json({ status: "ok" });
 });

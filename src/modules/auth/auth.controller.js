@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 
 function signToken(userId) {
     return jwt.sign(
-        {sub: userId},
+        {userId},
         process.env.JWT_SECRET,
         {expiresIn: process.env.JWT_EXPIRES_IN || "7d"}
     );
@@ -29,7 +29,7 @@ export async function register(req, res) {
         select: {id: true, email: true, name: true, createdAt: true}
     })
 
-    const token = signToken(user.id);
+    const token = signToken(user);
     return res.status(201).json({user, token});
 
 }
@@ -51,7 +51,7 @@ export async function login(req, res) {
         return res.status(401).send({error: 'Неверные данные авторизации'});
     }
 
-    const token = signToken(user.id);
+    const token = signToken(user);
     return res.status(200).json({
         user: {id: user.id, name: user.name, email: user.email},
         token,

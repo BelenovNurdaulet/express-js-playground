@@ -1,8 +1,15 @@
 import {CustomError} from "../errors/CustomError.js";
+import logger from "../shared/logger.js";
 
 
 const isProd = process.env.NODE_ENV === 'production';
 const isDebugMode = process.env.APP_DEBUG === 'true';
+
+function exceptionLevel(status) {
+    if(status >= 500) return 'error';
+    if(status >= 400) return 'warn';
+    return 'info';
+}
 
 export default function exceptionHandler(err, req, res, next) {
 
@@ -10,14 +17,27 @@ export default function exceptionHandler(err, req, res, next) {
         return next(err);
     }
 
+    const status = err instanceof CustomError ? err.status : 500;
+
+    logger[exceptionLevel(status)]({
+        requestId: req.requestId,
+        method: req.method,
+        url: req.originalUrl,
+        status,
+        code: err.code ?? "INTERNAL_ERROR",
+        errName: err.name,
+        errMessage: err.message,
+        ...(status >= 500 ? { stack: err.stack } : {}),
+        ...(req.user?.id ? { userId: req.user.id } : {}),
+    }, "request failed");
 
     if (err instanceof CustomError) {
-        const message = err.expose ? err.message : "An error occurred. Please view logs for more details";
+        const message = err.expose ? err.message : "Internal server error";
 
         const payload = {
             error: {
                 message: message,
-                code: err.code,
+                code: err.code ?? 'APP_ERROR',
                 details: err.details?? null,
             },
             requestId: req.requestId ?? null,
@@ -31,7 +51,7 @@ export default function exceptionHandler(err, req, res, next) {
 
     const payload = {
         error: {
-            message: "An error occurred. Please view logs for more details",
+            message: "Internal server error",
             code: "INTERNAL_ERROR",
         },
         requestId: req.requestId ?? null,

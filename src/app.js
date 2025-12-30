@@ -4,9 +4,11 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
 import profileRoutes from "./modules/profile/profile.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import postRoutes from "./modules/post/post.routes.js";
 import requestId from "./middlewares/requestId.js";
 import exceptionHandler from "./middlewares/exceptionHandler.js";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not set");
@@ -15,7 +17,11 @@ if (!process.env.JWT_SECRET) {
 const PORT = 5001;
 
 const app = express();
-app.use(cors())
+app.use(cookieParser());
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+}));
 app.use(express.json());
 app.use(requestId);
 /** @type {import('swagger-jsdoc').Options} */
@@ -38,6 +44,7 @@ app.use("/swagger", swaggerUi.serve , swaggerUi.setup(swaggerDocs))
 
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/posts" , postRoutes);
 app.get("/", (req, res) => {
     res.status(200).json({ status: "ok" });
 });

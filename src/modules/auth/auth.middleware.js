@@ -1,18 +1,21 @@
-import jwt from "jsonwebtoken";
 import {UnauthorizedError} from "../../errors/CustomError.js";
+import {verifyToken} from "./auth.service.js";
 
 export function auth(req, res, next) {
-    const header = req.headers.authorization;
-    if (!header || !header.startsWith('Bearer ')) {
-         throw new UnauthorizedError("Unauthorized");
-    }
+    const token = req.cookies?.access_token;
 
-    const token = header.split(' ')[1];
+    if (!token) {
+        throw new UnauthorizedError("Authentication required");
+    }
     try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = {id: payload.sub};
+        const payload = verifyToken(token)
+        req.user = {
+            id: payload.id,
+            email: payload.email,
+            name: payload.name,
+        };
         return next()
-    } catch (e) {
-       throw new UnauthorizedError("Unauthorized");
+    } catch {
+        throw new UnauthorizedError("Invalid or expired token");
     }
 }

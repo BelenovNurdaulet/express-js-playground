@@ -1,26 +1,17 @@
-import jwt from "jsonwebtoken";
 import {prisma} from "../../db/prisma.js";
 import bcrypt from "bcrypt";
-
-function signToken(userId) {
-    return jwt.sign(
-        {userId},
-        process.env.JWT_SECRET,
-        {expiresIn: process.env.JWT_EXPIRES_IN || "7d"}
-    );
-}
+import {signAccessToken, signRefreshToken, verifyToken} from "./auth.service.js";
+import {BadRequestError, ConflictError, UnauthorizedError} from "../../errors/CustomError.js";
 
 export async function register(req, res) {
     const {name, email, password} = req.body;
-
     if (!email || !password) {
-        return res.status(400).send({error: 'Заполните все необходимые поля'});
+      throw new BadRequestError("Заполните все необходимые поля");
     }
 
     const emailExists = await prisma.user.findUnique({where: {email}});
-
     if (emailExists) {
-        return res.status(409).send({error: `Пользователь с почтой "${email}" , уже существует`})
+        throw new ConflictError(`Пользователь с почтой "${email}" , уже существует`)
     }
     const hashPassword = await bcrypt.hash(password, 10);
 
@@ -29,31 +20,71 @@ export async function register(req, res) {
         select: {id: true, email: true, name: true, createdAt: true}
     })
 
-    const token = signToken(user);
-    return res.status(201).json({user, token});
+    return res.status(200).json({user});
 
 }
 
 export async function login(req, res) {
     const {email, password} = req.body;
-
     if (!email || !password) {
-        return res.status(400).send({error: 'Заполните все необходимые поля'});
+        throw new BadRequestError("Заполните все необходимые поля");
     }
 
     const user = await prisma.user.findUnique({where: {email}});
     if (!user) {
-        return res.status(401).send({error: 'Неверные данные авторизации'});
+        throw new UnauthorizedError(`Неверные данные авторизации`)
     }
 
     const passwordRight = await bcrypt.compare(password, user.password);
     if (!passwordRight) {
-        return res.status(401).send({error: 'Неверные данные авторизации'});
+        throw new UnauthorizedError(`Неверные данные авторизации`)
     }
 
-    const token = signToken(user);
+    const accessToken = signAccessToken(user);
+    const refreshToken = signRefreshToken(user);
+
+    res.cookie('access_token', accessToken, {httpOnly: true});
+    res.cookie('refresh_token', refreshToken, {httpOnly: true});
+
     return res.status(200).json({
-        user: {id: user.id, name: user.name, email: user.email},
-        token,
+        user: {id: user.id, name: user.name, email: user.email, createdAt: user.createdAt},
+        accessToken: accessToken,
     });
 }
+
+export async function refreshToken(req, res) {
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (!refreshToken) {
+        throw new UnauthorizedError("Tokens is required");
+    }
+
+    const payload = verifyToken(refreshToken);
+
+    if (!payload || payload.type !== "refresh_token") {
+        throw new UnauthorizedError("Unauthorized");
+    }
+
+    const user = await prisma.user.findUnique({where: {id: payload.id}});
+
+    if (!user) {
+        throw new UnauthorizedError("Unauthorized");
+    }
+    const newAccessToken = signAccessToken(user);
+    const newRefreshToken = signRefreshToken(user);
+
+    res.cookie('access_token', newAccessToken, {httpOnly: true});
+    res.cookie('refresh_token', newRefreshToken, {httpOnly: true});
+
+    return res.status(200).json({'success': true});
+}
+
+export async function logout(req, res) {
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+
+    return res.status(200).json({'success': true});
+}
+
+
+

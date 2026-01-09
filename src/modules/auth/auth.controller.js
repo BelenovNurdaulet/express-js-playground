@@ -1,4 +1,4 @@
-import {prisma} from "../../db/prisma.js";
+import {prisma} from "../../infrastructure/db/prisma.js";
 import bcrypt from "bcrypt";
 import {signAccessToken, signRefreshToken, verifyToken} from "./auth.service.js";
 import {BadRequestError, ConflictError, UnauthorizedError} from "../../errors/CustomError.js";

@@ -11,6 +11,12 @@ export class CustomError extends Error {
     }
 }
 
+export class NotImplementedError extends CustomError {
+    constructor(message = "Not implemented") {
+        super(message, 501, true, null, "NOT_IMPLEMENTED");
+    }
+}
+
 export class ForbiddenError extends CustomError {
     constructor(message = "Access denied") {
         super(message, 403, true, null, "FORBIDDEN");

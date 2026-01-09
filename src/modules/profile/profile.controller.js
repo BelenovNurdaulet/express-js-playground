@@ -1,4 +1,4 @@
-import {prisma} from "../../db/prisma.js";
+import {prisma} from "../../infrastructure/db/prisma.js";
 import bcrypt from "bcrypt";
 
 export async function me(req, res) {
